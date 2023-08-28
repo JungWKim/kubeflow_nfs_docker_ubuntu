@@ -10,10 +10,12 @@
 #
 # How to use this repository
 ### * you don't need to execute setup_server repository in advance.
+### 0. prepare at least one nfs server
 ### 1. run bootstrap.sh without sudo in a master node
 ### 2. run add_node.sh without sudo in every worker and other master nodes.
 ### 3. run setup_nfs_provisioner.sh without sudo in a master node
 ### 4. run setup_kubeflow.sh without sudo
+### 5. access kubeflow with "HTTPS"
 #
 # how to uninstall gpu-operator
 ### 1. helm delete -n gpu-operator $(helm list -n gpu-operator | grep gpu-operator | awk '{print $1}')
