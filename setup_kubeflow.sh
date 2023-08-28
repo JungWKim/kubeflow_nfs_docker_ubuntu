@@ -8,6 +8,8 @@
 
 MASTER_IP=
 
+sudo docker login
+
 # download kubeflow manifest repository
 cd ~
 git clone https://github.com/kubeflow/manifests.git -b v1.7-branch

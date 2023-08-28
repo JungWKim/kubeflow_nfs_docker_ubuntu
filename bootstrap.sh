@@ -2,6 +2,8 @@
 
 IP=
 
+sudo docker login
+
 if [ -e /etc/needrestart/needrestart.conf ] ; then
 	# disable outdated librareis pop up
 	sed -i "s/\#\$nrconf{restart} = 'i'/\$nrconf{restart} = 'a'/g" /etc/needrestart/needrestart.conf

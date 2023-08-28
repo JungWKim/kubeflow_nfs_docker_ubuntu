@@ -4,6 +4,8 @@
 NFS_IP=
 NFS_PATH=
 
+sudo docker login
+
 # add nfs provisioner repository
 helm repo add nfs-subdir-external-provisioner https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/
 
