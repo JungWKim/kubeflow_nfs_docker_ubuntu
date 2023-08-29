@@ -7,6 +7,7 @@
 #!/bin/bash
 
 MASTER_IP=
+CURRENT_DIR=$PWD
 
 sudo docker login
 
@@ -49,5 +50,5 @@ cd ~/manifests
 while ! kustomize build example | awk '!/well-defined/' | kubectl apply -f -; do echo "Retrying to apply resources"; sleep 10; done
 
 # create certification for https connection
-sed -i 's/MASTER_IP/'"${MASTER_IP}"'/g' ~/kubeflow_nfs_docker_ubuntu/certificate.yaml
-kubectl apply -f ~/kubeflow_nfs_docker_ubuntu/certificate.yaml
+sed -i 's/MASTER_IP/'"${MASTER_IP}"'/g' ${CURRENT_DIR}/certificate.yaml
+kubectl apply -f ${CURRENT_DIR}/certificate.yaml
