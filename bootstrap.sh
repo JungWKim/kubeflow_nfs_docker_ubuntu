@@ -58,6 +58,13 @@ sed -i "s/host_architecture }}]/host_architecture }} signed-by=\/etc\/apt\/keyri
 sed -i "s/# docker_cgroup_driver: systemd/docker_cgroup_driver: systemd/g" inventory/mycluster/group_vars/all/docker.yml
 sed -i "s/# docker_storage_options: -s overlay2/docker_storage_options: -s overlay2/g" inventory/mycluster/group_vars/all/docker.yml
 
+# remove aufs-tools in specific yml file (ubuntu 22.04 bug)
+OS_DIST=$(. /etc/os-release;echo $ID$VERSION_ID)
+
+if [ "${OS_DIST}" != "ubuntu22.04" ] ; then
+	sed -i "/aufs-tools/d" roles/kubernetes/preinstall/vars/ubuntu.yml
+fi
+
 # download docker gpg
 sudo mkdir -m 0755 -p /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
