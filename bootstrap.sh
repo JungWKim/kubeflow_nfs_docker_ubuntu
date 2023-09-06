@@ -61,7 +61,7 @@ sed -i "s/# docker_storage_options: -s overlay2/docker_storage_options: -s overl
 # remove aufs-tools in specific yml file (ubuntu 22.04 bug)
 OS_DIST=$(. /etc/os-release;echo $ID$VERSION_ID)
 
-if [ "${OS_DIST}" != "ubuntu22.04" ] ; then
+if [ "${OS_DIST}" == "ubuntu22.04" ] ; then
 	sed -i "/aufs-tools/d" roles/kubernetes/preinstall/vars/ubuntu.yml
 fi
 
