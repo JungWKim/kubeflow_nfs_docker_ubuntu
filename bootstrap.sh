@@ -71,6 +71,9 @@ sed -i'' -r -e "/targetPort: 8443/a\  type: NodePort" roles/kubernetes-apps/ansi
 # enable helm
 sed -i "s/helm_enabled: false/helm_enabled: true/g" inventory/mycluster/group_vars/k8s_cluster/addons.yml
 
+# disable nodelocaldns
+sed -i "s/enable_nodelocaldns: true/enable_nodelocaldns: false/g" inventory/mycluster/group_vars/k8s_cluster/k8s-cluster.yml
+
 # enable kubectl & kubeadm auto-completion
 echo "source <(kubectl completion bash)" >> ${HOME}/.bashrc
 echo "source <(kubeadm completion bash)" >> ${HOME}/.bashrc
