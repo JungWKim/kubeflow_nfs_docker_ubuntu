@@ -17,6 +17,8 @@
 ### 4. run setup_kubeflow.sh without sudo
 ### 5. access kubeflow with "HTTPS"
 #
+# kubeflow 화면 잘림 현상 : 크롬 대신 MS edge 브라우저를 사용해보세요.
+#
 # how to uninstall gpu-operator
 ### 1. helm delete -n gpu-operator $(helm list -n gpu-operator | grep gpu-operator | awk '{print $1}')
 #
