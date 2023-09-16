@@ -37,7 +37,7 @@ ssh-copy-id -i ~/.ssh/id_rsa ${USER}@${IP}
 
 # k8s installation via kubespray
 cd ~
-git clone -b release-2.20 https://github.com/kubernetes-sigs/kubespray.git
+git clone -b release-2.18 https://github.com/kubernetes-sigs/kubespray.git
 cd kubespray
 pip install -r requirements.txt
 
@@ -51,13 +51,19 @@ CONFIG_FILE=inventory/mycluster/hosts.yaml python3 contrib/inventory_builder/inv
 
 # use docker container runtime
 sed -i "s/docker_version: '20.10'/docker_version: 'latest'/g" roles/container-engine/docker/defaults/main.yml
-sed -i "s/docker_containerd_version: 1.6.4/docker_containerd_version: latest/g" roles/download/defaults/main.yml
+sed -i "s/docker_containerd_version: 1.4.12/docker_containerd_version: latest/g" roles/download/defaults/main.yml
 sed -i "s/container_manager: containerd/container_manager: docker/g" inventory/mycluster/group_vars/k8s_cluster/k8s-cluster.yml
-sed -i "s/# container_manager: containerd/container_manager: docker/g" inventory/mycluster/group_vars/all/etcd.yml
+sed -i "s/etcd_deployment_type: host/etcd_deployment_type: docker/g" inventory/mycluster/group_vars/etcd.yml
 sed -i "s/host_architecture }}]/host_architecture }} signed-by=\/etc\/apt\/keyrings\/docker.gpg]/g" roles/container-engine/docker/vars/ubuntu.yml
 sed -i "s/# docker_cgroup_driver: systemd/docker_cgroup_driver: systemd/g" inventory/mycluster/group_vars/all/docker.yml
-sed -i "s/etcd_deployment_type: host/etcd_deployment_type: docker/g" inventory/mycluster/group_vars/all/etcd.yml
 sed -i "s/# docker_storage_options: -s overlay2/docker_storage_options: -s overlay2/g" inventory/mycluster/group_vars/all/docker.yml
+
+# remove aufs-tools in specific yml file (ubuntu 22.04 bug)
+OS_DIST=$(. /etc/os-release;echo $ID$VERSION_ID)
+
+if [ "${OS_DIST}" == "ubuntu22.04" ] ; then
+	sed -i "/aufs-tools/d" roles/kubernetes/preinstall/vars/ubuntu.yml
+fi
 
 # download docker gpg
 sudo mkdir -m 0755 -p /etc/apt/keyrings
