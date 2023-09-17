@@ -1,8 +1,14 @@
 #!/bin/bash
 
-USER=
+USER=gpuadmin
 
 func_prerequisite() {
+
+	# root user check
+	if [ "${UID}" -ne 0 ] ; then
+                echo -e " You're not running the scipt as root. Please check your clearance."
+                exit 1
+	fi
 
 	# check USER variable is defined
 	if [ -z $USER ] ; then
@@ -72,14 +78,15 @@ func_useradd() {
 			stty -echo
 			read -e -p "password: " PW 
 			stty echo
+			echo ""
 		done
 		
 		# password confirmation
 		while [ -z ${PW_confirm} ] ; do
-			echo ""
 			stty -echo
 			read -e -p "password confirmation: " PW_confirm
 			stty echo
+			echo ""
 		done
 
 		if [ ${PW} != ${PW_confirm} ] ; then
