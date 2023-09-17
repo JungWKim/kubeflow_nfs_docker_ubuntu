@@ -4,6 +4,12 @@ USER=
 
 func_prerequisite() {
 
+	# root user check
+	if [ "${UID}" -ne 0 ] ; then
+                echo -e " You're not running the scipt as root. Please check your clearance."
+                exit 1
+	fi
+
 	# check USER variable is defined
 	if [ -z $USER ] ; then
 		echo -e " USER variable is not defined."
@@ -46,22 +52,25 @@ func_usage() {
 
 func_useradd() {
 
-	local EMAIL 
-	local NAME
-	local PW
+	local EMAIL NAME
+	local PW PW_confirm
+	local ENCRYPT_PW
 
 	# input user information
 	echo -e "----- New user information -----"
 	while [ -z ${NAME} ] ; do
 		read -e -p "username: " NAME ; done
 
-	# check $NAME exists
-	grep username $USER_HOME/manifests/common/dex/base/config-map.yaml | grep ${NAME} &> /dev/null
 	# skip the operation when NAME matches 'username', or 'email'
 	if [[ $NAME == "username" || $NAME == "email" ]] ; then
 		echo "You can't create an account with $NAME."
+		exit 1
+	fi
+
+	# check $NAME exists
+	grep username $USER_HOME/manifests/common/dex/base/config-map.yaml | grep ${NAME} 1> /dev/null
 	# if it does, do not operate creation
-	elif [ $? -eq 0 ] ; then
+	if [ $? -eq 0 ] ; then
 		echo "\"$NAME\" already exist."
 	# otherwise, operate creation
 	else
@@ -69,23 +78,25 @@ func_useradd() {
 			stty -echo
 			read -e -p "password: " PW 
 			stty echo
+			echo ""
 		done
 		
 		# password confirmation
 		while [ -z ${PW_confirm} ] ; do
 			stty -echo
-			read -e -p "password: " PW_confirm
+			read -e -p "password confirmation: " PW_confirm
 			stty echo
+			echo ""
 		done
 
-		if [ ${PW} -ne ${PW_confirm} ] ; then
-			echo "password doesn't match. Retry again."
+		if [ ${PW} != ${PW_confirm} ] ; then
+			echo "password doesn't match. try again."
 			exit 1
 		fi
 
 		EMAIL=${NAME}@example.com
 		# bcrypt user's password
-		local ENCRYPT_PW=$(htpasswd -nbBC 10 $NAME $PW | cut -d ':' -f 2)
+		ENCRYPT_PW=$(htpasswd -nbBC 10 $NAME $PW | cut -d ':' -f 2)
 		# input new user's information into config-map.yaml
 		sed -i -r -e "/staticPasswords/a\    \- email: ${EMAIL}\\n      hash: ${ENCRYPT_PW}\\n      username: ${NAME}\\n      userID: ${NAME}" $USER_HOME/manifests/common/dex/base/config-map.yaml
 
@@ -103,13 +114,13 @@ spec:
 EOF
 
 		# apply changes in config-map.yaml
-		kustomize build $USER_HOME/manifests/example | awk '!/well-defined/' | kubectl apply -f - 1> /dev/null
+		kustomize build $USER_HOME/manifests/example | kubectl apply -f - 1> /dev/null
+
+		# create profile following profile.yaml, then it will automatically create namespace
+		kubectl apply -f $USER_HOME/profile.yaml
 
 		# restart dex deployment
 		kubectl -n auth rollout restart deployment dex
-
-		# create profile following profile.yaml , then it will automatically create namespace as well
-		kubectl apply -f $USER_HOME/profile.yaml
 
 		echo "** New User registration successfully finished **"
 	fi
