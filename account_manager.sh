@@ -114,7 +114,7 @@ spec:
 EOF
 
 		# apply changes in config-map.yaml
-		kustomize build $USER_HOME/manifests/example | kubectl apply -f - 1> /dev/null
+		kustomize build $USER_HOME/manifests/example | awk '!/well-defined/' | kubectl apply -f - 1> /dev/null
 
 		# create profile following profile.yaml, then it will automatically create namespace
 		kubectl apply -f $USER_HOME/profile.yaml
