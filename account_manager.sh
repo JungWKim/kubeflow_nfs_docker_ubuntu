@@ -1,6 +1,6 @@
 #!/bin/bash
 
-USER=gpuadmin
+USER=
 
 func_prerequisite() {
 
