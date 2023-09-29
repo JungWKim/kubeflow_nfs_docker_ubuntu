@@ -1,5 +1,5 @@
 # Summary
-### OS : Ubuntu 20.04, 22.04
+### OS : Ubuntu 20.04
 ### CRI : Docker latest
 ### k8s : 1.24.6 deployed by kubespray release-2.20
 ### CNI : calico
