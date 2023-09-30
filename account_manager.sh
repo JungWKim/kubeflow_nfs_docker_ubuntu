@@ -1,3 +1,17 @@
+# This script is for creating, deleting and listing user accounts in kubeflow
+# and is available for kubeflow v1.5, v1.6, v1.7
+# 
+# Below things are prerequisite before executing this script
+# 1. run as root
+# 2. install apache2-utils package to enable hashing passwords
+# 3. At least one administrator account must exist also its home directory too. And you have to input the name in USER variable
+# 4. All accounts will be recorded in $HOME/profile.yaml so please check if you have an existing one not to be overwritten
+#
+# how it works
+# 1. UI is designed to be as similar as possible with fdisk command 
+# 2. All accounts are recorded in $HOME/profile.yaml and config-map.yaml in dex directory
+# 3. every account's email format is united as '@example.com'. For example, if you created one account whose name is 'admin', its email will be 'admin@example.com' automatically.
+
 #!/bin/bash
 
 USER=
