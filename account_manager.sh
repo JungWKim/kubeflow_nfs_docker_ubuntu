@@ -127,11 +127,11 @@ spec:
     name: $EMAIL
 EOF
 
-		# create profile following profile.yaml, then it will automatically create namespace
-		kubectl apply -f $USER_HOME/profile.yaml
-
 		# apply changes in config-map.yaml
 		kustomize build $USER_HOME/manifests/example | awk '!/well-defined/' | kubectl apply -f - 1> /dev/null
+
+		# create profile following profile.yaml, then it will automatically create namespace
+		kubectl apply -f $USER_HOME/profile.yaml
 
 		# restart dex deployment
 		kubectl -n auth rollout restart deployment dex
