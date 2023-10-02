@@ -128,7 +128,7 @@ spec:
 EOF
 
 		# apply changes in config-map.yaml
-		kustomize build $USER_HOME/manifests/example | awk '!/well-defined/' | kubectl apply -f - 1> /dev/null
+		kustomize build $USER_HOME/manifests/example | kubectl apply -f - 1> /dev/null
 
 		# create profile following profile.yaml, then it will automatically create namespace
 		kubectl apply -f $USER_HOME/profile.yaml
@@ -161,7 +161,7 @@ func_userdel() {
 
 		# delete user account in config-map.yaml based on email && apply the change
 		sed -i -e "/${EMAIL}/,+3 d" $USER_HOME/manifests/common/dex/base/config-map.yaml
-		kustomize build $USER_HOME/manifests/example | awk '!/well-defined/' | kubectl apply -f - 1> /dev/null
+		kustomize build $USER_HOME/manifests/example | kubectl apply -f - 1> /dev/null
 
 		# restart dex deployment
 		kubectl -n auth rollout restart deployment dex
