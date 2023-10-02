@@ -25,7 +25,7 @@ cat << EOF >> ~/manifests/common/istio-1-16/kubeflow-istio-resources/base/kf-ist
       serverCertificate: /etc/istio/ingressgateway-certs/tls.crt
 EOF
 
-# enable kubeflow to be accessed through https (1)
+# enable kubeflow to be accessed through https (2)
 cat << EOF >> ~/manifests/common/istio-1-17/kubeflow-istio-resources/base/kf-istio-resources.yaml
     tls:
       httpsRedirect: true
