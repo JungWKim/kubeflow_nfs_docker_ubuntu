@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # This script is for creating, deleting and listing user accounts in kubeflow
-# and is available for kubeflow v1.5, v1.6, v1.7
 # 
 # Below things are prerequisite before executing this script
 # 1. run as root
