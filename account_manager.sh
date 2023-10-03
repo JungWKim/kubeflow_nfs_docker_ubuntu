@@ -10,9 +10,8 @@
 # 4. All accounts will be recorded in $HOME/profile.yaml so please check if you have an existing one not to be overwritten
 #
 # how it works
-# 1. UI is designed to be as similar as possible with fdisk command 
-# 2. All accounts are recorded in $HOME/profile.yaml and config-map.yaml in dex directory
-# 3. every account's email format is united as '@example.com'. For example, if you created one account whose name is 'admin', its email will be 'admin@example.com' automatically.
+# 1. All accounts are recorded in $HOME/profile.yaml and config-map.yaml in dex directory
+# 2. every account's email format is united as '@example.com'. For example, if you created one account whose name is 'admin', its email will be 'admin@example.com' automatically.
 
 USER=
 
@@ -25,7 +24,7 @@ func_prerequisite() {
 	fi
 
 	# check USER variable is defined
-	if [ -z $USER ] ; then
+	if [ -z "$USER" ] ; then
 		echo -e " USER variable is not defined."
 		echo -e " Please write value in USER."
 		exit 1 ; fi
@@ -45,10 +44,6 @@ func_prerequisite() {
 	if [ ! -e /usr/bin/htpasswd ] ; then
 		echo -e "htpasswd doesn't exist. Enter 'sudo apt install -y apache2-utils'"
 		exit 1 ; fi
-
-	# check $HOME/profile.yaml exists
-	if [ ! -e $USER_HOME/profile.yaml ] ; then
-		touch $USER_HOME/profile.yaml ; fi
 
 	# check manifests directory exists
 	if [ ! -d $USER_HOME/manifests ] ; then
@@ -75,45 +70,46 @@ func_useradd() {
 	while [ -z ${NAME} ] ; do
 		read -e -p "username: " NAME ; done
 
-	# skip the operation when NAME matches 'username', or 'email'
-	if [[ $NAME == "username" || $NAME == "email" ]] ; then
-		echo "You can't create an account with $NAME."
-		exit 1
-	fi
-
-	# check $NAME exists
-	grep username $USER_HOME/manifests/common/dex/base/config-map.yaml | grep -w ${NAME} 1> /dev/null
-	# if it does, do not operate creation
-	if [ $? -eq 0 ] ; then
-		echo "\"$NAME\" already exist."
-	# otherwise, operate creation
+	# skip the operation if special characters or blank spaces are found
+	if [[ $NAME == "username" || $NAME == "email" || $NAME == *\!* || 
+	      $NAME == *\@* || $NAME == *\#* || $NAME == *\$* || $NAME == *\%* ||
+	      $NAME == *\^* || $NAME == *\&* || $NAME == *\** || $NAME == *\(* ||
+	      $NAME == *\)* || $NAME == *\-* || $NAME == *\_* || $NAME == *\+* ||
+	      $NAME == *\=* || $NAME == *\[* || $NAME == *\]* || $NAME == *\{* ||
+	      $NAME == *\}* || $NAME == *\\* || $NAME == *\|* || $NAME == *\;* ||
+	      $NAME == *\:* || $NAME == *\'* || $NAME == *\"* || $NAME == *\/* ||
+	      $NAME == *\?* || $NAME == *\,* || $NAME == *\.* || $NAME == *\<* ||
+	      $NAME == *\>* || $NAME == *\`* || $NAME == *\~* || "$NAME" == *\ * ]] ; then
+		echo "You can't create an account with $NAME. Please avoid using special charactersor blank space."
 	else
-		while [ -z ${PW} ] ; do
-			stty -echo
-			read -e -p "password: " PW 
-			stty echo
-			echo ""
-		done
-		
-		# password confirmation
-		while [ -z ${PW_confirm} ] ; do
-			stty -echo
-			read -e -p "password confirmation: " PW_confirm
-			stty echo
-			echo ""
-		done
+		# check $NAME exists
+		grep username $USER_HOME/manifests/common/dex/base/config-map.yaml | cut -d ":" -f 2 | grep -x " ${NAME}" 1> /dev/null
+		# if it does, do not operate creation
+		if [ $? -eq 0 ] ; then
+			echo "\"$NAME\" already exist."
+		else
+			while [ -z "${PW}" ] ; do
+				read -s -e -p "password: " PW 
+				echo ""
+			done
+			
+			# password confirmation
+			while [ -z "${PW_confirm}" ] ; do
+				read -s -e -p "password confirmation: " PW_confirm
+				echo ""
+			done
 
-		if [ ${PW} != ${PW_confirm} ] ; then
-			echo "password doesn't match. try again."
-			exit 1
-		fi
-
-		EMAIL=${NAME}@example.com
-		# bcrypt user's password
-		ENCRYPT_PW=$(htpasswd -nbBC 10 $NAME $PW | cut -d ':' -f 2)
-
-		# input new user's information into profile.yaml
-		cat >> $USER_HOME/profile.yaml <<EOF
+			# when passwords don't match, exit creation
+			if [ ${PW} != ${PW_confirm} ] ; then
+				echo "password doesn't match. try again."
+			# otherwise, create an account
+			else
+				EMAIL=${NAME}@example.com
+				# bcrypt user's password
+				ENCRYPT_PW=$(htpasswd -nbBC 10 $NAME $PW | cut -d ':' -f 2)
+				
+				# create profile. Then namespace will also be created automatically
+				kubectl apply -f - <<EOF
 ---
 apiVersion: kubeflow.org/v1beta1
 kind: Profile
@@ -124,34 +120,25 @@ spec:
     kind: User
     name: $EMAIL
 EOF
+				# if problem happens when creating profile, then stop
+				if [ $? -ne 0 ] ; then 
+					kubectl delete profile ${NAME}
 
-		# create profile following profile.yaml, then it will automatically create namespace
-		kubectl apply -f $USER_HOME/profile.yaml
+					echo "** New User registration successfully failed **"
+				else
+					# input new user's information into config-map.yaml
+					sed -i -r -e "/staticPasswords/a\    \- email: ${EMAIL}\\n      hash: ${ENCRYPT_PW}\\n      username: ${NAME}\\n      userID: ${NAME}" $USER_HOME/manifests/common/dex/base/config-map.yaml
 
-  		if [ $? -ne 0] ; then
-			kubectl delete profile $NAME
-			kubectl delete ns $NAME
-   
-    			# delete user account in profile.yaml based on email
-			local END=$(grep -n ${EMAIL} $USER_HOME/profile.yaml | cut -d ':' -f 1)
-			local START=$(expr ${END} - 8)
-			if [ $START -lt 0 ] ; then
-				START=0 ; fi
-			sed -i "${START},${END} d" $USER_HOME/profile.yaml
+					# apply changes in config-map.yaml
+					kustomize build $USER_HOME/manifests/example | kubectl apply -f - 1> /dev/null
 
-   			echo "** New User registration successfully failed **"
-    		else
-      			# input new user's information into config-map.yaml
-			sed -i -r -e "/staticPasswords/a\    \- email: ${EMAIL}\\n      hash: ${ENCRYPT_PW}\\n      username: ${NAME}\\n      userID: ${NAME}" $USER_HOME/manifests/common/dex/base/config-map.yaml
-	
-			# apply changes in config-map.yaml
-			kustomize build $USER_HOME/manifests/example | awk '!/well-defined/' | kubectl apply -f - 1> /dev/null
-	
-			# restart dex deployment
-			kubectl -n auth rollout restart deployment dex
-	
-			echo "** New User registration successfully finished **"
-      		fi
+					# restart dex deployment
+					kubectl -n auth rollout restart deployment dex
+
+					echo "** New User registration successfully finished **"
+				fi
+			fi
+		fi
 	fi
 }
 
@@ -159,38 +146,30 @@ func_userdel() {
 
 	local EMAIL NAME ANSWER
 
-	# input user to be deleted
+	# input user which you want to delete
 	echo -e "--- Enter information for deletion ---"
-	while [ -z ${NAME} ] ; do
+	while [ -z "${NAME}" ] ; do
 		read -e -p "Name: " NAME 
 	done
 
-	# check $NAME exists
-	# if it doesn't, do not operate deletion
-	grep username $USER_HOME/manifests/common/dex/base/config-map.yaml | grep -w ${NAME} &> /dev/null
+	# if the account doesn't exist, do not operate deletion
+	grep username $USER_HOME/manifests/common/dex/base/config-map.yaml | cut -d ":" -f 2 | grep -x " ${NAME}" &> /dev/null
 	if [ $? -ne 0 ] ; then
 		echo "$NAME doesn't exist."
-	# if it exists, delete it
+	# otherwise, delete it
 	else
 		EMAIL=${NAME}@example.com
 
-		# delete user account in config-map.yaml based on email && apply the change
-		sed -i -e "/${EMAIL}/,+3 d" $USER_HOME/manifests/common/dex/base/config-map.yaml
-		kustomize build $USER_HOME/manifests/example | awk '!/well-defined/' | kubectl apply -f - 1> /dev/null
+		# delete user account in config-map.yaml
+		sed -i -e "/ ${EMAIL}/,+3 d" $USER_HOME/manifests/common/dex/base/config-map.yaml
+
+		kustomize build $USER_HOME/manifests/example | kubectl apply -f - 1> /dev/null
 
 		# restart dex deployment
 		kubectl -n auth rollout restart deployment dex
 
-		# delete user account in profile.yaml based on email
-		END=$(grep -n ${EMAIL} $USER_HOME/profile.yaml | cut -d ':' -f 1)
-		START=$(expr ${END} - 8)
-		if [ $START -lt 0 ] ; then
-			START=0 ; fi
-		sed -i "${START},${END} d" $USER_HOME/profile.yaml
-
 		# actually delete profile and namespace in k8s
 		kubectl delete profile $NAME
-		kubectl delete ns $NAME
 
 		echo "** User ${NAME} is deleted successfully **"
 	fi
