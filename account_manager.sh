@@ -111,8 +111,6 @@ func_useradd() {
 		EMAIL=${NAME}@example.com
 		# bcrypt user's password
 		ENCRYPT_PW=$(htpasswd -nbBC 10 $NAME $PW | cut -d ':' -f 2)
-		# input new user's information into config-map.yaml
-		sed -i -r -e "/staticPasswords/a\    \- email: ${EMAIL}\\n      hash: ${ENCRYPT_PW}\\n      username: ${NAME}\\n      userID: ${NAME}" $USER_HOME/manifests/common/dex/base/config-map.yaml
 
 		# input new user's information into profile.yaml
 		cat >> $USER_HOME/profile.yaml <<EOF
@@ -127,16 +125,33 @@ spec:
     name: $EMAIL
 EOF
 
-		# apply changes in config-map.yaml
-		kustomize build $USER_HOME/manifests/example | awk '!/well-defined/' | kubectl apply -f - 1> /dev/null
-
 		# create profile following profile.yaml, then it will automatically create namespace
 		kubectl apply -f $USER_HOME/profile.yaml
 
-		# restart dex deployment
-		kubectl -n auth rollout restart deployment dex
+  		if [ $? -ne 0] ; then
+			kubectl delete profile $NAME
+			kubectl delete ns $NAME
+   
+    			# delete user account in profile.yaml based on email
+			local END=$(grep -n ${EMAIL} $USER_HOME/profile.yaml | cut -d ':' -f 1)
+			local START=$(expr ${END} - 8)
+			if [ $START -lt 0 ] ; then
+				START=0 ; fi
+			sed -i "${START},${END} d" $USER_HOME/profile.yaml
 
-		echo "** New User registration successfully finished **"
+   			echo "** New User registration successfully failed **"
+    		else
+      			# input new user's information into config-map.yaml
+			sed -i -r -e "/staticPasswords/a\    \- email: ${EMAIL}\\n      hash: ${ENCRYPT_PW}\\n      username: ${NAME}\\n      userID: ${NAME}" $USER_HOME/manifests/common/dex/base/config-map.yaml
+	
+			# apply changes in config-map.yaml
+			kustomize build $USER_HOME/manifests/example | awk '!/well-defined/' | kubectl apply -f - 1> /dev/null
+	
+			# restart dex deployment
+			kubectl -n auth rollout restart deployment dex
+	
+			echo "** New User registration successfully finished **"
+      		fi
 	fi
 }
 
