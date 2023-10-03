@@ -13,7 +13,7 @@
 # 1. All accounts are recorded in $HOME/profile.yaml and config-map.yaml in dex directory
 # 2. every account's email format is united as '@example.com'. For example, if you created one account whose name is 'admin', its email will be 'admin@example.com' automatically.
 
-USER=gpuadmin
+USER=
 
 func_prerequisite() {
 
