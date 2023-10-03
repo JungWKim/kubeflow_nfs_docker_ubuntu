@@ -82,7 +82,7 @@ func_useradd() {
 	fi
 
 	# check $NAME exists
-	grep username $USER_HOME/manifests/common/dex/base/config-map.yaml | grep ${NAME} 1> /dev/null
+	grep username $USER_HOME/manifests/common/dex/base/config-map.yaml | grep -w ${NAME} 1> /dev/null
 	# if it does, do not operate creation
 	if [ $? -eq 0 ] ; then
 		echo "\"$NAME\" already exist."
@@ -152,7 +152,7 @@ func_userdel() {
 
 	# check $NAME exists
 	# if it doesn't, do not operate deletion
-	grep username $USER_HOME/manifests/common/dex/base/config-map.yaml | grep ${NAME} &> /dev/null
+	grep username $USER_HOME/manifests/common/dex/base/config-map.yaml | grep -w ${NAME} &> /dev/null
 	if [ $? -ne 0 ] ; then
 		echo "$NAME doesn't exist."
 	# if it exists, delete it
