@@ -58,6 +58,10 @@ sed -i "s/host_architecture }}]/host_architecture }} signed-by=\/etc\/apt\/keyri
 sed -i "s/# docker_cgroup_driver: systemd/docker_cgroup_driver: systemd/g" inventory/mycluster/group_vars/all/docker.yml
 sed -i "s/# docker_storage_options: -s overlay2/docker_storage_options: -s overlay2/g" inventory/mycluster/group_vars/all/docker.yml
 
+# change kube_proxy_mode to iptables
+sed -i "s/kube_proxy_mode: ipvs/kube_proxy_mode: iptables/g" roles/kubespray-defaults/defaults/main.yaml
+sed -i "s/kube_proxy_mode: ipvs/kube_proxy_mode: iptables/g" inventory/mycluster/group_vars/k8s_cluster/k8s-cluster.yml
+
 # remove aufs-tools in specific yml file (ubuntu 22.04 bug)
 OS_DIST=$(. /etc/os-release;echo $ID$VERSION_ID)
 
