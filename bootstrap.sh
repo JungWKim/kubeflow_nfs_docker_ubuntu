@@ -61,6 +61,7 @@ sed -i "s/# docker_storage_options: -s overlay2/docker_storage_options: -s overl
 
 # change kube_proxy_mode to iptables
 sed -i "s/kube_proxy_mode: ipvs/kube_proxy_mode: iptables/g" roles/kubespray-defaults/defaults/main.yaml
+sed -i "s/kube_proxy_mode: ipvs/kube_proxy_mode: iptables/g" inventory/mycluster/group_vars/k8s_cluster/k8s-cluster.yml
 
 # download docker gpg
 sudo mkdir -m 0755 -p /etc/apt/keyrings
