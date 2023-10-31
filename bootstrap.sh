@@ -78,16 +78,16 @@ sed -i "s/helm_enabled: false/helm_enabled: true/g" inventory/mycluster/group_va
 # disable nodelocaldns
 sed -i "s/enable_nodelocaldns: true/enable_nodelocaldns: false/g" inventory/mycluster/group_vars/k8s_cluster/k8s-cluster.yml
 
+ansible-playbook -i inventory/mycluster/hosts.yaml  --become --become-user=root cluster.yml -K
+sleep 30
+cd ~
+
 # enable kubectl & kubeadm auto-completion
 echo "source <(kubectl completion bash)" >> ${HOME}/.bashrc
 echo "source <(kubeadm completion bash)" >> ${HOME}/.bashrc
 echo "source <(kubectl completion bash)" | sudo tee -a /root/.bashrc
 echo "source <(kubeadm completion bash)" | sudo tee -a /root/.bashrc
 source ${HOME}/.bashrc
-
-ansible-playbook -i inventory/mycluster/hosts.yaml  --become --become-user=root cluster.yml -K
-sleep 30
-cd ~
 
 # enable kubectl in admin account and root
 mkdir -p ${HOME}/.kube
