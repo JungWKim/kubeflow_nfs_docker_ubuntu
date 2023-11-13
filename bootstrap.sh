@@ -31,6 +31,9 @@ EOF
 
 sudo sysctl --system
 
+sudo sysctl fs.inotify.max_user_instances=1280
+sudo sysctl fs.inotify.max_user_watches=655360
+
 # ssh configuration
 ssh-keygen -t rsa
 ssh-copy-id -i ~/.ssh/id_rsa ${USER}@${IP}
